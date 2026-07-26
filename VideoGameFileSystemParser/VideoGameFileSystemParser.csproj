@@ -15,7 +15,7 @@
         <Title>VideoGameFileSystemParser</Title>
         <Copyright>Copyright (c) 2026 Peterson Fernandes (drpetersonfernandes)</Copyright>
         <PackageProjectUrl>https://github.com/drpetersonfernandes/VideoGameFileSystemParser</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/drpetersonfernandes/VideoGameFileSystemParser/blob/master/LICENSE.txt</PackageLicenseUrl>
+        <PackageLicenseUrl></PackageLicenseUrl>
         <PackageIcon>icon\icon.png</PackageIcon>
         <RepositoryUrl>https://github.com/drpetersonfernandes/VideoGameFileSystemParser</RepositoryUrl>
         <PackageTags>chd;mame;iso9660;udf;xdvdfs;operafs;cdi;ps1;ps2;ps3;psp;xbox;dreamcast;retro;videogame;disc;filesystem;emulation;emulator;emulator-development;emulators;filesystem;filetree;parser;parsing;parsing-algotithm;parsing-engine;parsing-library;parsing-table;video-game</PackageTags>
