@@ -3,8 +3,10 @@
 A **cross-platform .NET library** for parsing video game console disc image file systems. Supports CHD, ISO, and raw sector data across 31 console formats including PlayStation, Xbox, Dreamcast, CD-i, 3DO, Pippin (HFS), and more.
 
 [![NuGet](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-blue)](https://dotnet.microsoft.com/)
-[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/)
-[![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/purelogiccode/CSharp_SimpleChdDrive/blob/main/LICENSE)
+[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.0.0)
+[![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/drpetersonfernandes/VideoGameFileSystemParser/blob/master/LICENSE.txt)
+
+
 
 ---
 
@@ -926,4 +928,4 @@ ChdContainer (high-level API)
 
 MIT -- see [LICENSE.txt](LICENSE.txt) for details.
 
-**Author:** [Peterson Fernandes (drpetersonfernandes)](https://github.com/purelogiccode)
+**Author:** [Peterson Fernandes (drpetersonfernandes)](https://github.com/drpetersonfernandes/)
