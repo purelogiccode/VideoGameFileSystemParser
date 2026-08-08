@@ -7,8 +7,10 @@ public enum FsNodeType
 {
     /// <summary>A regular file.</summary>
     File = 0,
+
     /// <summary>A directory.</summary>
     Directory = 4,
+
     /// <summary>A symbolic link.</summary>
     Symlink = 12
 }
@@ -22,42 +24,52 @@ public class FsNode
     /// The file or directory name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
+
     /// <summary>
     /// The LBA of the first extent.
     /// </summary>
     public uint Lba { get; set; }
+
     /// <summary>
     /// The total data size in bytes.
     /// </summary>
     public ulong Size { get; set; }
+
     /// <summary>
     /// The file number for interleaved (XA) access.
     /// </summary>
     public byte FileNumber { get; set; }
+
     /// <summary>
     /// Whether data is interleaved.
     /// </summary>
     public bool IsInterleaved { get; set; }
+
     /// <summary>
     /// Whether this node is a directory.
     /// </summary>
     public bool IsDirectory { get; set; }
+
     /// <summary>
     /// Whether this node spans multiple extents.
     /// </summary>
     public bool IsMultiExtent { get; set; }
+
     /// <summary>
     /// Whether to read data as raw bytes.
     /// </summary>
     public bool IsRawPassthrough { get; set; }
+
     /// <summary>
     /// Whether data is embedded within a file entry sector.
     /// </summary>
     public bool IsEmbedded { get; set; }
+
     /// <summary>
     /// The byte offset within the sector for embedded data.
     /// </summary>
     public uint EmbeddedOffset { get; set; }
+
     /// <summary>
     /// The last modification timestamp, if available from the file system.
     /// </summary>
@@ -97,10 +109,12 @@ public class FsNode
     /// The number of hard links to this node, if available.
     /// </summary>
     public uint? LinkCount { get; set; }
+
     /// <summary>
     /// The type of this node (file, directory, or symlink).
     /// </summary>
     public FsNodeType NodeType { get; set; } = FsNodeType.File;
+
     /// <summary>
     /// The target path of the symbolic link, if this node is a symlink.
     /// </summary>
@@ -126,6 +140,7 @@ public struct FsExtent
     /// The starting logical block address.
     /// </summary>
     public uint Lba { get; set; }
+
     /// <summary>
     /// The size in bytes.
     /// </summary>

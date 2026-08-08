@@ -843,20 +843,16 @@ public class SectorReader : IDisposable
             track.StartLba = currentLogicalLba;
             track.ChdOffset = currentFileFrame;
 
-            if (track.Pregap > 0)
-            {
-                currentLogicalLba += track.Pregap;
-            }
-
-            var isStoredPregap = track.Pregap > 0;
-            if (isStoredPregap)
-            {
-                currentFileFrame += track.Pregap;
-            }
-
-            track.StartLba = currentLogicalLba;
-            track.ChdOffset = currentFileFrame;
-
+            // NOTE: The pregap frames are intentionally NOT added to the track's
+            // file offset (ChdOffset) or StartLba. chdman stores the pregap
+            // sectors as part of the track itself (FRAMES already includes them,
+            // as silence before the track data), so the track's chunk in the CHD
+            // begins at the pregap. Adding Pregap here shifted every subsequent
+            // track by the pregap length (150 frames = 2 s for Neo Geo CD) and
+            // pushed the last track past the end of the CHD file. The old C++
+            // CHDFileExplorer did not add the pregap either; CUE generation
+            // exposes it via INDEX 00/INDEX 01. Consumers that need to skip the
+            // pregap (e.g. WAV export) must start reading at StartLba + Pregap.
             currentLogicalLba += track.Frames;
             var padded = (track.Frames + 3) / 4 * 4;
             currentFileFrame += padded;

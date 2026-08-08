@@ -377,7 +377,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
 
             if (string.Equals(entry.Name, _cueStemName + ".iso", StringComparison.OrdinalIgnoreCase))
                 return ReadVirtualBin(offset, buffer, bufOffset, bytesToRead,
-                    true);
+                    _cueMode == CueExportMode.CueIsoWav);
 
             if (TryParseWavTrackIndex(entry.Name, out var wavTrackIdx))
                 return ReadVirtualWav(wavTrackIdx, offset, buffer, bufOffset, bytesToRead);
@@ -566,7 +566,11 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                         currentFile = wavFileName;
                     }
 
-                    var pcmSize = (ulong)t.Frames * 2352;
+                    // The WAV contains only the audible track data; the pregap
+                    // frames (silence stored at the start of the track chunk)
+                    // are skipped, matching the INDEX 01 00:00:00 in the CUE.
+                    var musicFrames = t.Frames > t.Pregap ? t.Frames - t.Pregap : 0u;
+                    var pcmSize = (ulong)musicFrames * 2352;
                     _wavHeaders[trackNum] = BuildWavHeader(pcmSize);
                     _wavDataSizes[trackNum] = pcmSize;
                 }
@@ -602,7 +606,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
 
                 if (!isWavMode)
                 {
-                    _cueBinSize += (ulong)t.Frames * _cueSectorSize;
+                    _cueBinSize += (ulong)t.Frames * VirtualTrackSectorSize(t);
                 }
             }
 
@@ -705,6 +709,21 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         return $"{m:D2}:{s:D2}:{f:D2}";
     }
 
+    /// <summary>
+    /// Returns the sector size used for a track inside a single-file virtual
+    /// export (BIN/ISO). Data tracks use the configured sector size (2352 for
+    /// BIN, 2048 for ISO); audio tracks inside a BINARY file are always raw
+    /// 2352-byte sectors, except in the cooked 2048-byte BIN mode which keeps
+    /// everything at 2048 bytes.
+    /// </summary>
+    private uint VirtualTrackSectorSize(TrackInfo t)
+    {
+        if (t.IsDataTrack || _cueMode == CueExportMode.CueBin2048)
+            return _cueSectorSize;
+
+        return 2352;
+    }
+
     private int ReadVirtualBin(ulong offset, byte[] buffer, int bufOffset, int bytesToRead,
         bool dataTracksOnly = false)
     {
@@ -728,7 +747,8 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                     if (dataTracksOnly && !t.IsDataTrack)
                         continue;
 
-                    var trackBytes = (ulong)t.Frames * _cueSectorSize;
+                    var trackSectorSize = VirtualTrackSectorSize(t);
+                    var trackBytes = (ulong)t.Frames * trackSectorSize;
                     if (currentOffset >= cumulative && currentOffset < cumulative + trackBytes)
                     {
                         targetTrack = t;
@@ -742,17 +762,18 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                 if (targetTrack == null) break;
 
                 reader.SetTrack(targetTrack, true);
+                var targetSectorSize = VirtualTrackSectorSize(targetTrack);
                 var offsetInTrack = currentOffset - trackByteOffset;
-                var frameInTrack = (uint)(offsetInTrack / _cueSectorSize);
-                var byteInFrame = (uint)(offsetInTrack % _cueSectorSize);
+                var frameInTrack = (uint)(offsetInTrack / targetSectorSize);
+                var byteInFrame = (uint)(offsetInTrack % targetSectorSize);
                 var logicalLba = targetTrack.StartLba + frameInTrack;
 
                 if (reader.ReadRawSector(logicalLba, out var rawSector))
                 {
-                    var dataOffset = _cueSectorSize == 2048
+                    var dataOffset = targetSectorSize == 2048
                         ? reader.SectorHeaderOffset
                         : reader.SyncOffset;
-                    var available = (int)(_cueSectorSize - byteInFrame);
+                    var available = (int)(targetSectorSize - byteInFrame);
                     var toCopy = Math.Min(available, bytesToRead - totalRead);
 
                     if (dataOffset + byteInFrame + toCopy <= rawSector.Length)
@@ -802,15 +823,20 @@ public class ChdContainer : IDisposable, IAsyncDisposable
             var totalRead = 0;
             const uint audioSectorSize = 2352;
 
+            // The WAV contains only the audible track data: the pregap frames
+            // (silence stored at the start of the track's CHD chunk) are skipped
+            // so the file begins at the music, matching INDEX 01 00:00:00.
+            var musicFrames = track.Frames > track.Pregap ? track.Frames - track.Pregap : 0u;
+
             while (totalRead < bytesToRead)
             {
                 var currentPcmOffset = pcmOffset + (ulong)totalRead;
                 var frameInTrack = (uint)(currentPcmOffset / audioSectorSize);
                 var byteInFrame = (uint)(currentPcmOffset % audioSectorSize);
 
-                if (frameInTrack >= track.Frames) break;
+                if (frameInTrack >= musicFrames) break;
 
-                var logicalLba = track.StartLba + frameInTrack;
+                var logicalLba = track.StartLba + track.Pregap + frameInTrack;
 
                 if (reader.ReadRawSector(logicalLba, out var rawSector))
                 {
