@@ -19,8 +19,8 @@
         <PackageIcon>icon\icon.png</PackageIcon>
         <RepositoryUrl>https://github.com/drpetersonfernandes/VideoGameFileSystemParser</RepositoryUrl>
         <PackageTags>chd;mame;iso9660;udf;xdvdfs;operafs;cdi;ps1;ps2;ps3;psp;xbox;dreamcast;retro;videogame;disc;filesystem;emulation;emulator;emulator-development;emulators;filesystem;filetree;parser;parsing;parsing-algotithm;parsing-engine;parsing-library;parsing-table;video-game</PackageTags>
-        <AssemblyVersion>1.0.0</AssemblyVersion>
-        <FileVersion>1.0.0</FileVersion>
+        <AssemblyVersion>1.1.0</AssemblyVersion>
+        <FileVersion>1.1.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
