@@ -10,7 +10,7 @@
 
         <!-- NuGet Package Metadata -->
         <PackageId>VideoGameFileSystemParser</PackageId>
-        <Version>1.0.0</Version>
+        <Version>1.1.0</Version>
         <Description>Video game file system parsing library for console disc images. Supports ISO 9660, UDF, XDVDFS, OperaFS, CD-i, and other formats through CHD, ISO and raw sector readers.</Description>
         <Title>VideoGameFileSystemParser</Title>
         <Copyright>Copyright (c) 2026 Peterson Fernandes (drpetersonfernandes)</Copyright>
@@ -19,6 +19,7 @@
         <PackageIcon>icon\icon.png</PackageIcon>
         <RepositoryUrl>https://github.com/drpetersonfernandes/VideoGameFileSystemParser</RepositoryUrl>
         <PackageTags>chd;mame;iso9660;udf;xdvdfs;operafs;cdi;ps1;ps2;ps3;psp;xbox;dreamcast;retro;videogame;disc;filesystem;emulation;emulator;emulator-development;emulators;filesystem;filetree;parser;parsing;parsing-algotithm;parsing-engine;parsing-library;parsing-table;video-game</PackageTags>
+        <PackageReleaseNotes>v1.1.0: Fixed virtual CUE/BIN/ISO/WAV export - pregap shift (tracks started 2 s late, bled into each other, last track unreadable), missing ISO audio in CUE/ISO export, and truncated tracks / incorrect BIN/ISO/WAV sizes. WAV exports now skip the stored pregap silence and start at INDEX 01 00:00:00.</PackageReleaseNotes>
         <AssemblyVersion>1.1.0</AssemblyVersion>
         <FileVersion>1.1.0</FileVersion>
     </PropertyGroup>

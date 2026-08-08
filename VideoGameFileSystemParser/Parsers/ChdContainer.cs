@@ -514,6 +514,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         var freshFile = true;
 
         var trackNum = 0;
+        uint dataFileFrames = 0;
         foreach (var t in _cachedTracks)
         {
             trackNum++;
@@ -539,17 +540,26 @@ public class ChdContainer : IDisposable, IAsyncDisposable
 
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  TRACK {trackNum:D2} {modeStr}");
 
+                // In WAV modes the BIN/ISO contains only the data tracks, so the
+                // INDEX positions must be relative to the data-file content, not
+                // the cumulative disc frame stream (which would be wrong when an
+                // audio track precedes a data track or when data tracks are
+                // separated by audio). In single-file (non-WAV) modes both are
+                // the same stream.
+                var dataFilePos = isWavMode ? dataFileFrames : cumulativeFrames;
+
                 if (t.Pregap > 0)
                 {
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 00 {SectorToMsf(cumulativeFrames)}");
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {SectorToMsf(cumulativeFrames + t.Pregap)}");
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 00 {SectorToMsf(dataFilePos)}");
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {SectorToMsf(dataFilePos + t.Pregap)}");
                 }
                 else
                 {
-                    sb.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {SectorToMsf(cumulativeFrames)}");
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {SectorToMsf(dataFilePos)}");
                 }
 
                 cumulativeFrames += t.Frames;
+                dataFileFrames += t.Frames;
                 _cueBinSize += (ulong)t.Frames * _cueSectorSize;
             }
             else
@@ -624,7 +634,12 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         };
         RegisterEntry(cueEntry, _rootHandle);
 
-        if (hasDataTracks)
+        // The CUE references the BIN/ISO file whenever there is at least one
+        // data track, and also in single-file (non-WAV) modes where audio
+        // tracks share the container. Register it in both cases so audio-only
+        // discs produce a working mount instead of a CUE pointing at a file
+        // that does not exist.
+        if (hasDataTracks || !isWavMode)
         {
             var dataFileExt = isIsoMode ? "iso" : "bin";
             var dataEntry = new FileEntry
@@ -718,7 +733,12 @@ public class ChdContainer : IDisposable, IAsyncDisposable
     /// </summary>
     private uint VirtualTrackSectorSize(TrackInfo t)
     {
-        if (t.IsDataTrack || _cueMode == CueExportMode.CueBin2048)
+        // Audio tracks inside a BINARY file are raw 2352-byte sectors, but only
+        // when the CHD actually stores raw sectors (UnitBytes >= 2352). Cooked
+        // 2048-byte-unit CHDs cannot contain audio tracks in practice (chdman
+        // only produces them from ISOs), but if one did, its sectors must be
+        // read at the unit size rather than 2352.
+        if (t.IsDataTrack || _cueMode == CueExportMode.CueBin2048 || UnitBytes < 2352)
             return _cueSectorSize;
 
         return 2352;

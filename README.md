@@ -3,10 +3,17 @@
 A **cross-platform .NET library** for parsing video game console disc image file systems. Supports CHD, ISO, and raw sector data across 31 console formats including PlayStation, Xbox, Dreamcast, CD-i, 3DO, Pippin (HFS), and more.
 
 [![NuGet](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-blue)](https://dotnet.microsoft.com/)
-[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.0.0)
+[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.1.0)
 [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/drpetersonfernandes/VideoGameFileSystemParser/blob/master/LICENSE.txt)
 
 
+
+---
+
+## Release Notes
+
+- **v1.1.0** — Fixed virtual CUE/BIN/ISO/WAV export: pregap shift, missing ISO audio, and truncated tracks.
+- **v1.0.0** — Initial release with support for 31 console formats.
 
 ---
 
@@ -63,7 +70,7 @@ Install-Package VideoGameFileSystemParser
 Or add directly to your `.csproj`:
 
 ```xml
-<PackageReference Include="VideoGameFileSystemParser" Version="1.0.0" />
+<PackageReference Include="VideoGameFileSystemParser" Version="1.1.0" />
 ```
 
 **Target Frameworks:** `net8.0`, `net9.0`, `net10.0`
