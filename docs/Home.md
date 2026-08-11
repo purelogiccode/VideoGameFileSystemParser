@@ -2,7 +2,7 @@
 
 > **A cross-platform .NET library for parsing video game console disc image file systems.**
 >
-> Supports **CHD**, **ISO**, and **raw sector** images across **31+ console formats** — PlayStation, Xbox, Dreamcast, CD-i, 3DO, Pippin (HFS/HFS+), PC Engine CD, PC-FX, and more — through a single high-level API.
+> Supports **CHD**, **ISO**, and **raw sector** images across **35 console formats** — PlayStation, Xbox, Dreamcast, CD-i, 3DO, Pippin (HFS/HFS+), PC Engine CD, PC-FX, and more — through a single high-level API.
 
 | | |
 |---|---|

@@ -1,6 +1,6 @@
 # Supported Consoles
 
-The library covers **31+ console and disc formats** through a mix of standard file system parsers, fallback chains, signature scanning, and virtual exports.
+The library covers **35 console and disc formats** through a mix of standard file system parsers, fallback chains, signature scanning, and virtual exports.
 
 ---
 

@@ -19,7 +19,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>icon\icon.png</PackageIcon>
         <RepositoryUrl>https://github.com/drpetersonfernandes/VideoGameFileSystemParser</RepositoryUrl>
-        <PackageTags>chd;mame;iso9660;udf;xdvdfs;operafs;cdi;ps1;ps2;ps3;psp;xbox;dreamcast;retro;videogame;disc;filesystem;emulation;emulator;emulator-development;emulators;filesystem;filetree;parser;parsing;parsing-algotithm;parsing-engine;parsing-library;parsing-table;video-game</PackageTags>
+        <PackageTags>chd;mame;iso9660;udf;xdvdfs;operafs;cdi;ps1;ps2;ps3;psp;xbox;dreamcast;retro;videogame;disc;filesystem;emulation;emulator;emulator-development;emulators;filesystem;filetree;parser;parsing;parsing-algorithm;parsing-engine;parsing-library;parsing-table;video-game</PackageTags>
         <PackageReleaseNotes>v1.2.0: New sector-size-aware generic formats - GenericIsoRaw split into GenericIsoRaw2352 / GenericIsoRaw2048; GenericCueIso, GenericCueBinWav and GenericCueIsoWav split into 2352/2048 variants; GenericCueBin2352Default renamed GenericCueBin2352. Added ConsoleTypeRegistry (display names + CLI aliases) and made ParserFactory.GetAllSupportedConsoles() registry-driven. Fixed virtual CUE export for 2048-cooked variants - audio tracks in BIN files now always use 2352-byte sectors and CUE track modes reflect the actual sector size. Code modernization (consistent var usage). New multi-page wiki documentation (docs/) and WhatsNew.md shipped in the package. BREAKING: removed GenericIsoRaw, GenericCueIso, GenericCueBinWav, GenericCueIsoWav and GenericCueBin2352Default.</PackageReleaseNotes>
         <AssemblyVersion>1.2.0</AssemblyVersion>
         <FileVersion>1.2.0</FileVersion>

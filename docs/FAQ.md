@@ -21,7 +21,7 @@ Check out [**CHDMounter**](https://github.com/drpetersonfernandes/CHDMounter) â€
 
 ### Which consoles are supported?
 
-31+ formats: PlayStation (PS1/PS2/PS3/PSP/auto), Xbox, Xbox 360, Dreamcast, Saturn, Genesis CD, 3DO, CD-i, Pippin (HFS/HFS+), PC Engine CD, PC-FX, PC-98, FM Towns, NeoGeo CD, Nuon, Pico, X68000, Amiga CD/CD32/CDTV, generic ISO 9660, raw passthrough, and virtual CUE/BIN/ISO/WAV exports. See [Supported Consoles](Supported-Consoles.md).
+35 formats: PlayStation (PS1/PS2/PS3/PSP/auto), Xbox, Xbox 360, Dreamcast, Saturn, Genesis CD, 3DO, CD-i, Pippin (HFS/HFS+), PC Engine CD, PC-FX, PC-98, FM Towns, NeoGeo CD, Nuon, Pico, X68000, Amiga CD/CD32/CDTV, generic ISO 9660, raw passthrough, and virtual CUE/BIN/ISO/WAV exports. See [Supported Consoles](Supported-Consoles.md).
 
 ### What file systems does the library parse?
 
