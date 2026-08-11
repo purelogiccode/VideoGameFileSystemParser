@@ -26,32 +26,11 @@ public enum ConsoleType
     /// <summary>Fujitsu FM Towns format.</summary>
     FmTowns,
 
-    /// <summary>Generic CUE/BIN image with 2352-byte sectors (default).</summary>
-    GenericCueBin2352Default,
-
-    /// <summary>Generic CUE/BIN image with 2048-byte sectors.</summary>
-    GenericCueBin2048,
-
-    /// <summary>Generic CUE/BIN with WAV audio tracks.</summary>
-    GenericCueBinWav,
-
-    /// <summary>Generic CUE/ISO image.</summary>
-    GenericCueIso,
-
-    /// <summary>Generic CUE/ISO with WAV audio tracks.</summary>
-    GenericCueIsoWav,
-
-    /// <summary>Generic ISO 9660 file system.</summary>
-    GenericIso9660,
-
-    /// <summary>Raw sector passthrough (no file system parsing).</summary>
-    GenericIsoRaw,
+    /// <summary>SNK NeoGeo CD format.</summary>
+    NeoGeoCd,
 
     /// <summary>VM Labs Nuon DVD format.</summary>
     Nuon,
-
-    /// <summary>SNK NeoGeo CD format.</summary>
-    NeoGeoCd,
 
     /// <summary>NEC PC Engine CD format.</summary>
     PcEngineCd,
@@ -61,6 +40,12 @@ public enum ConsoleType
 
     /// <summary>NEC PC-98 format.</summary>
     Pc98,
+
+    /// <summary>Sega Pico format.</summary>
+    Pico,
+
+    /// <summary>Apple Bandai Pippin format.</summary>
+    Pippin,
 
     /// <summary>PlayStation auto-detection mode.</summary>
     PlayStation,
@@ -95,9 +80,36 @@ public enum ConsoleType
     /// <summary>Microsoft Xbox 360 format.</summary>
     Xbox360,
 
-    /// <summary>Sega Pico format.</summary>
-    Pico,
+    /// <summary>Generic ISO 9660 file system.</summary>
+    GenericIso9660,
 
-    /// <summary>Apple Bandai Pippin format.</summary>
-    Pippin
+    /// <summary>Raw sector passthrough (no file system parsing), 2352-byte units.</summary>
+    GenericIsoRaw2352,
+
+    /// <summary>Raw sector passthrough (no file system parsing), 2048-byte units.</summary>
+    GenericIsoRaw2048,
+
+    /// <summary>Generic CUE/BIN image with 2352-byte sectors.</summary>
+    GenericCueBin2352,
+
+    /// <summary>Generic CUE/BIN image with 2048-byte sectors.</summary>
+    GenericCueBin2048,
+
+    /// <summary>Generic CUE/ISO image with 2352-byte sectors.</summary>
+    GenericCueIso2352,
+
+    /// <summary>Generic CUE/ISO image with 2048-byte sectors.</summary>
+    GenericCueIso2048,
+
+    /// <summary>Generic CUE/BIN with WAV audio tracks, 2352-byte sectors.</summary>
+    GenericCueBinWav2352,
+
+    /// <summary>Generic CUE/BIN with WAV audio tracks, 2048-byte sectors.</summary>
+    GenericCueBinWav2048,
+
+    /// <summary>Generic CUE/ISO with WAV audio tracks, 2352-byte sectors.</summary>
+    GenericCueIsoWav2352,
+
+    /// <summary>Generic CUE/ISO with WAV audio tracks, 2048-byte sectors.</summary>
+    GenericCueIsoWav2048
 }

@@ -232,7 +232,7 @@ internal class GenericIsoRawParser : IConsoleParser
     /// <inheritdoc />
     public ConsoleType GetConsoleType()
     {
-        return ConsoleType.GenericIsoRaw;
+        return ConsoleType.GenericIsoRaw2352;
     }
 
     /// <inheritdoc />

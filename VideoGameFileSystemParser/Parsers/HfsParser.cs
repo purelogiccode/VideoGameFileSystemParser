@@ -29,7 +29,7 @@ internal class HfsParser
         _folders.Clear();
         _entries.Clear();
 
-        if (!FindHfsPartitionAndMdb(track, out var catalogStartBlock, out var catalogBlockCount))
+        if (!FindHfsPartitionAndMdb(track, out uint catalogStartBlock, out uint catalogBlockCount))
             return false;
 
         if (!ParseCatalogFile(catalogStartBlock, catalogBlockCount))
@@ -44,9 +44,9 @@ internal class HfsParser
         catalogStartBlock = 0;
         catalogBlockCount = 0;
 
-        var trackStart = track?.StartLba ?? 0;
+        uint trackStart = track?.StartLba ?? 0;
 
-        var sectors = ReadSectors(trackStart, 4);
+        byte[]? sectors = ReadSectors(trackStart, 4);
         if (sectors == null && trackStart != 0)
         {
             _reader.SetTrack(null);
@@ -61,26 +61,26 @@ internal class HfsParser
         int[] headerOffsets = [0, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
 
         // Apple Partition Map path (signature "ER")
-        foreach (var hdrOff in headerOffsets)
+        foreach (int hdrOff in headerOffsets)
         {
             if (hdrOff + 2 > sectors.Length) continue;
             if (sectors[hdrOff] != 0x45 || sectors[hdrOff + 1] != 0x52) continue;
 
-            for (var entry = 0; entry < 64; entry++)
+            for (int entry = 0; entry < 64; entry++)
             {
-                var byteOffset = hdrOff + 512 * entry;
+                int byteOffset = hdrOff + 512 * entry;
                 if (byteOffset + 512 > sectors.Length)
                     break;
 
                 if (sectors[byteOffset] != 0x50 || sectors[byteOffset + 1] != 0x4d)
                     continue;
 
-                var partitionType = Encoding.ASCII.GetString(sectors, byteOffset + 48, 32)
+                string partitionType = Encoding.ASCII.GetString(sectors, byteOffset + 48, 32)
                     .TrimEnd('\0', ' ');
 
                 if (partitionType.Equals("Apple_HFS", StringComparison.Ordinal))
                 {
-                    var firstPhysicalBlock = BeU32(sectors, byteOffset + 8);
+                    uint firstPhysicalBlock = BeU32(sectors, byteOffset + 8);
                     _hfsPartitionByteOffset = firstPhysicalBlock * 512;
                     _hfsStartLba = trackStart + _hfsPartitionByteOffset / 2048;
 
@@ -93,7 +93,7 @@ internal class HfsParser
                 else if (partitionType.Equals("Apple_HFS+", StringComparison.Ordinal) ||
                          partitionType.Equals("Apple_HFSX", StringComparison.Ordinal))
                 {
-                    var firstPhysicalBlock = BeU32(sectors, byteOffset + 8);
+                    uint firstPhysicalBlock = BeU32(sectors, byteOffset + 8);
                     _hfsPartitionByteOffset = firstPhysicalBlock * 512;
                     _hfsStartLba = trackStart + _hfsPartitionByteOffset / 2048;
 
@@ -104,7 +104,7 @@ internal class HfsParser
         }
 
         // Direct HFS path (signature "LK" bootblock) at various offsets
-        foreach (var hdrOff in headerOffsets)
+        foreach (int hdrOff in headerOffsets)
         {
             if (hdrOff + 2 > sectors.Length) continue;
             if (sectors[hdrOff] != 0x4C || sectors[hdrOff + 1] != 0x4B) continue;
@@ -138,14 +138,14 @@ internal class HfsParser
 
         for (uint sector = 0; sector < scanLimit; sector++)
         {
-            var lba = trackStart + sector;
-            var sec = new byte[2048];
+            uint lba = trackStart + sector;
+            byte[] sec = new byte[2048];
             if (!_reader.ReadSector(lba, sec))
                 continue;
 
             int[] headerOffsets = [0, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
 
-            foreach (var hdrOff in headerOffsets)
+            foreach (int hdrOff in headerOffsets)
             {
                 if (hdrOff + 2 > sec.Length) continue;
 
@@ -172,8 +172,8 @@ internal class HfsParser
                 // Check for HFS+ volume header "HX" or "H+" at byte offset 1024
                 if (hdrOff + 1026 <= sec.Length)
                 {
-                    var isHx = sec[hdrOff + 1024] == 0x48 && sec[hdrOff + 1025] == 0x58;
-                    var isHp = sec[hdrOff + 1024] == 0x48 && sec[hdrOff + 1025] == 0x2B;
+                    bool isHx = sec[hdrOff + 1024] == 0x48 && sec[hdrOff + 1025] == 0x58;
+                    bool isHp = sec[hdrOff + 1024] == 0x48 && sec[hdrOff + 1025] == 0x2B;
                     if (isHx || isHp)
                     {
                         _hfsStartLba = lba;
@@ -186,16 +186,16 @@ internal class HfsParser
                 // Check for Apple Partition Map "ER"
                 if (sec[hdrOff] == 0x45 && sec[hdrOff + 1] == 0x52)
                 {
-                    for (var entry = 0; entry < 64; entry++)
+                    for (int entry = 0; entry < 64; entry++)
                     {
-                        var byteOffset = hdrOff + 512 * entry;
+                        int byteOffset = hdrOff + 512 * entry;
                         if (byteOffset + 512 > sec.Length)
                             break;
 
                         if (sec[byteOffset] != 0x50 || sec[byteOffset + 1] != 0x4d)
                             continue;
 
-                        var partitionType = Encoding.ASCII.GetString(sec, byteOffset + 48, 32)
+                        string partitionType = Encoding.ASCII.GetString(sec, byteOffset + 48, 32)
                             .TrimEnd('\0', ' ');
 
                         if (!partitionType.Equals("Apple_HFS", StringComparison.Ordinal) &&
@@ -203,7 +203,7 @@ internal class HfsParser
                             !partitionType.Equals("Apple_HFSX", StringComparison.Ordinal))
                             continue;
 
-                        var firstPhysicalBlock = BeU32(sec, byteOffset + 8);
+                        uint firstPhysicalBlock = BeU32(sec, byteOffset + 8);
                         _hfsPartitionByteOffset = firstPhysicalBlock * 512;
                         _hfsStartLba = trackStart + _hfsPartitionByteOffset / 2048;
 
@@ -242,12 +242,12 @@ internal class HfsParser
             32, 544, 1056, 1568
         ];
 
-        foreach (var candidateOffset in candidateOffsets)
+        foreach (int candidateOffset in candidateOffsets)
         {
-            for (var sectorOffset = 0; sectorOffset <= 2; sectorOffset++)
+            for (int sectorOffset = 0; sectorOffset <= 2; sectorOffset++)
             {
-                var mdbLba = _hfsStartLba + (uint)sectorOffset;
-                var sector = new byte[2048];
+                uint mdbLba = _hfsStartLba + (uint)sectorOffset;
+                byte[] sector = new byte[2048];
 
                 if (!_reader.ReadSector(mdbLba, sector))
                     continue;
@@ -258,7 +258,7 @@ internal class HfsParser
                 if (sector[candidateOffset] != 0x42 || sector[candidateOffset + 1] != 0x44)
                     continue;
 
-                var allocBlockSize = BeU32(sector, candidateOffset + 20);
+                uint allocBlockSize = BeU32(sector, candidateOffset + 20);
 
                 if (allocBlockSize == 0)
                     continue;
@@ -281,8 +281,8 @@ internal class HfsParser
         catalogStartBlock = 0;
         catalogBlockCount = 0;
 
-        var sector2Lba = _hfsStartLba + 2;
-        var sector = new byte[2048];
+        uint sector2Lba = _hfsStartLba + 2;
+        byte[] sector = new byte[2048];
         if (!_reader.ReadSector(sector2Lba, sector))
             return false;
 
@@ -292,20 +292,20 @@ internal class HfsParser
         // Check for HFS+ signature at various header offsets
         int[] headerOffsets = [0, 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32];
 
-        foreach (var hdrOff in headerOffsets)
+        foreach (int hdrOff in headerOffsets)
         {
             if (hdrOff + 160 > sector.Length) continue;
 
-            var sig0 = sector[hdrOff];
-            var sig1 = sector[hdrOff + 1];
+            byte sig0 = sector[hdrOff];
+            byte sig1 = sector[hdrOff + 1];
 
-            var isHfsPlus = (sig0 == 0x48 && sig1 == 0x58) || // "HX"
-                            (sig0 == 0x48 && sig1 == 0x2B); // "H+"
+            bool isHfsPlus = (sig0 == 0x48 && sig1 == 0x58) || // "HX"
+                             (sig0 == 0x48 && sig1 == 0x2B); // "H+"
 
             if (!isHfsPlus)
                 continue;
 
-            var allocBlockSize = BeU32(sector, hdrOff + 8);
+            uint allocBlockSize = BeU32(sector, hdrOff + 8);
             if (allocBlockSize == 0 || allocBlockSize % 512 != 0)
                 continue;
 
@@ -319,11 +319,11 @@ internal class HfsParser
                 continue;
 
             var catalogExtents = new List<(uint startBlock, uint blockCount)>();
-            for (var i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
-                var extOff = hdrOff + 128 + i * 8;
-                var start = BeU32(sector, extOff);
-                var count = BeU32(sector, extOff + 4);
+                int extOff = hdrOff + 128 + i * 8;
+                uint start = BeU32(sector, extOff);
+                uint count = BeU32(sector, extOff + 4);
                 if (start > 0 && count > 0)
                     catalogExtents.Add((start, count));
             }
@@ -343,22 +343,22 @@ internal class HfsParser
             if (extStartBlock == 0 || extBlockCount == 0)
                 continue;
 
-            var bytePos = _hfsPartitionByteOffset + (ulong)extStartBlock * _allocationBlockSize;
-            var totalBytes = (ulong)extBlockCount * _allocationBlockSize;
+            ulong bytePos = _hfsPartitionByteOffset + (ulong)extStartBlock * _allocationBlockSize;
+            ulong totalBytes = (ulong)extBlockCount * _allocationBlockSize;
 
             ulong totalRead = 0;
             while (totalRead < totalBytes)
             {
-                var curByte = bytePos + totalRead;
-                var curLba = (uint)(curByte / 2048);
-                var curOff = (int)(curByte % 2048);
+                ulong curByte = bytePos + totalRead;
+                uint curLba = (uint)(curByte / 2048);
+                int curOff = (int)(curByte % 2048);
 
-                var sector = new byte[2048];
+                byte[] sector = new byte[2048];
                 if (!_reader.ReadSector(curLba, sector))
                     return false;
 
-                var copyLen = Math.Min(2048 - curOff, (int)(totalBytes - totalRead));
-                var segment = new byte[copyLen];
+                int copyLen = Math.Min(2048 - curOff, (int)(totalBytes - totalRead));
+                byte[] segment = new byte[copyLen];
                 Array.Copy(sector, curOff, segment, 0, copyLen);
                 regionData.AddRange(segment);
                 totalRead += (ulong)copyLen;
@@ -368,12 +368,12 @@ internal class HfsParser
         if (regionData.Count == 0)
             return false;
 
-        var nodeData = regionData.ToArray();
+        byte[] nodeData = regionData.ToArray();
 
         ushort headerRecOff;
         ushort nodeSize;
 
-        var nodeDesc = ReadBtNodeDescriptor(nodeData, 0);
+        BtNodeDescriptor nodeDesc = ReadBtNodeDescriptor(nodeData, 0);
         if (nodeDesc.Kind != KBtHeaderNode)
         {
             if (!ScanForBtreeHeaderRecord(nodeData, out headerRecOff, out nodeSize))
@@ -395,19 +395,19 @@ internal class HfsParser
             }
         }
 
-        var currentLeaf = BeU32(nodeData, headerRecOff + 10);
+        uint currentLeaf = BeU32(nodeData, headerRecOff + 10);
 
         var visited = new HashSet<uint>();
-        for (var safety = 0; safety < 100000 && currentLeaf != 0; safety++)
+        for (int safety = 0; safety < 100000 && currentLeaf != 0; safety++)
         {
             if (!visited.Add(currentLeaf))
                 break;
 
-            var leafOffset = (int)((ulong)currentLeaf * nodeSize);
+            int leafOffset = (int)((ulong)currentLeaf * nodeSize);
             if (leafOffset + nodeSize > nodeData.Length)
                 break;
 
-            var leafDesc = ReadBtNodeDescriptor(nodeData, leafOffset);
+            BtNodeDescriptor leafDesc = ReadBtNodeDescriptor(nodeData, leafOffset);
             if (leafDesc.Kind == KBtLeafNode)
             {
                 ProcessHfsPlusLeafNode(nodeData, leafOffset, leafDesc.NumRecords, nodeSize);
@@ -424,38 +424,38 @@ internal class HfsParser
         if (numRecords == 0)
             return;
 
-        var recordOffsets = new ushort[numRecords];
-        for (var i = 0; i < numRecords; i++)
+        ushort[] recordOffsets = new ushort[numRecords];
+        for (int i = 0; i < numRecords; i++)
         {
-            var tableOffset = nodeSize - 2 * (i + 1);
+            int tableOffset = nodeSize - 2 * (i + 1);
             recordOffsets[i] = BeU16(nodeData, nodeOffset + tableOffset);
         }
 
-        foreach (var off in recordOffsets.OrderBy(static o => o))
+        foreach (ushort off in recordOffsets.OrderBy(static o => o))
         {
             if (off + 7 > nodeSize)
                 continue;
 
-            var keyLen = BeU16(nodeData, nodeOffset + off);
+            ushort keyLen = BeU16(nodeData, nodeOffset + off);
             if (keyLen < 6 || off + keyLen > nodeSize)
                 continue;
 
-            var parentId = BeU32(nodeData, nodeOffset + off + 2);
-            var nameLength = nodeData[nodeOffset + off + 6];
+            uint parentId = BeU32(nodeData, nodeOffset + off + 2);
+            byte nameLength = nodeData[nodeOffset + off + 6];
 
             if (off + 10 + nameLength > nodeSize)
                 continue;
 
-            var name = Encoding.BigEndianUnicode.GetString(nodeData, nodeOffset + off + 10, nameLength * 2);
+            string name = Encoding.BigEndianUnicode.GetString(nodeData, nodeOffset + off + 10, nameLength * 2);
 
-            var keySize = 6 + nameLength;
-            var alignedKeySize = (keySize + 1) & ~1;
-            var dataOff = nodeOffset + off + alignedKeySize;
+            int keySize = 6 + nameLength;
+            int alignedKeySize = (keySize + 1) & ~1;
+            int dataOff = nodeOffset + off + alignedKeySize;
 
             if (dataOff + 2 > nodeOffset + nodeSize)
                 continue;
 
-            var recordType = BeU16(nodeData, dataOff);
+            ushort recordType = BeU16(nodeData, dataOff);
 
             switch (recordType)
             {
@@ -464,7 +464,7 @@ internal class HfsParser
                     if (dataOff + 88 > nodeOffset + nodeSize)
                         continue;
 
-                    var folder = ReadHfsPlusFolderRecord(nodeData, dataOff);
+                    HfsFolderRecord folder = ReadHfsPlusFolderRecord(nodeData, dataOff);
                     folder.ParentId = parentId;
                     folder.Name = name;
                     _entries.Add(new HfsCatalogEntry
@@ -482,7 +482,7 @@ internal class HfsParser
                     if (dataOff + 243 > nodeOffset + nodeSize)
                         continue;
 
-                    var file = ReadHfsPlusFileRecord(nodeData, dataOff);
+                    HfsFileRecord file = ReadHfsPlusFileRecord(nodeData, dataOff);
                     _entries.Add(new HfsCatalogEntry
                     {
                         Name = name,
@@ -498,7 +498,7 @@ internal class HfsParser
                     if (dataOff + 10 > nodeOffset + nodeSize)
                         continue;
 
-                    var threadParentId = BeU32(nodeData, dataOff + 8);
+                    uint threadParentId = BeU32(nodeData, dataOff + 8);
                     _entries.Add(new HfsCatalogEntry
                     {
                         Name = name,
@@ -533,15 +533,15 @@ internal class HfsParser
             ResourceLogicalSize = (int)BeU64(data, offset + 88)
         };
 
-        for (var i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
-            var extOff = offset + 112 + i * 8;
+            int extOff = offset + 112 + i * 8;
             rec.DataExtents[i] = (BeU32(data, extOff), BeU32(data, extOff + 4));
         }
 
-        for (var i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
-            var extOff = offset + 152 + i * 8;
+            int extOff = offset + 152 + i * 8;
             rec.RsrcExtents[i] = (BeU32(data, extOff), BeU32(data, extOff + 4));
         }
 
@@ -555,7 +555,7 @@ internal class HfsParser
 
     private uint BlockToAbsoluteLba(uint allocationBlock)
     {
-        var byteOffset = _hfsPartitionByteOffset + (ulong)_allocationBlockStart * 512 + (ulong)allocationBlock * _allocationBlockSize;
+        ulong byteOffset = _hfsPartitionByteOffset + (ulong)_allocationBlockStart * 512 + (ulong)allocationBlock * _allocationBlockSize;
         return _hfsStartLba + (uint)(byteOffset / 2048);
     }
 
@@ -569,22 +569,22 @@ internal class HfsParser
             if (extStartBlock == 0 || extBlockCount == 0)
                 continue;
 
-            var bytePos = _hfsPartitionByteOffset + (ulong)_allocationBlockStart * 512 + (ulong)extStartBlock * _allocationBlockSize;
-            var totalBytes = (ulong)extBlockCount * _allocationBlockSize;
+            ulong bytePos = _hfsPartitionByteOffset + (ulong)_allocationBlockStart * 512 + (ulong)extStartBlock * _allocationBlockSize;
+            ulong totalBytes = (ulong)extBlockCount * _allocationBlockSize;
 
             ulong totalRead = 0;
             while (totalRead < totalBytes)
             {
-                var curByte = bytePos + totalRead;
-                var curLba = (uint)(curByte / 2048);
-                var curOff = (int)(curByte % 2048);
+                ulong curByte = bytePos + totalRead;
+                uint curLba = (uint)(curByte / 2048);
+                int curOff = (int)(curByte % 2048);
 
-                var sector = new byte[2048];
+                byte[] sector = new byte[2048];
                 if (!_reader.ReadSector(curLba, sector))
                     return false;
 
-                var copyLen = Math.Min(2048 - curOff, (int)(totalBytes - totalRead));
-                for (var j = 0; j < copyLen; j++)
+                int copyLen = Math.Min(2048 - curOff, (int)(totalBytes - totalRead));
+                for (int j = 0; j < copyLen; j++)
                     regionData.Add(sector[curOff + j]);
                 totalRead += (ulong)copyLen;
             }
@@ -593,12 +593,12 @@ internal class HfsParser
         if (regionData.Count == 0)
             return false;
 
-        var nodeData = regionData.ToArray();
+        byte[] nodeData = regionData.ToArray();
 
         ushort headerRecOff;
         ushort nodeSize;
 
-        var nodeDesc = ReadBtNodeDescriptor(nodeData, 0);
+        BtNodeDescriptor nodeDesc = ReadBtNodeDescriptor(nodeData, 0);
         if (nodeDesc.Kind != KBtHeaderNode)
         {
             if (!ScanForBtreeHeaderRecord(nodeData, out headerRecOff, out nodeSize))
@@ -606,7 +606,7 @@ internal class HfsParser
         }
         else
         {
-            var nodeSizeBtree = _allocationBlockSize;
+            uint nodeSizeBtree = _allocationBlockSize;
             headerRecOff = BeU16(nodeData, (int)nodeSizeBtree - 2);
 
             if (headerRecOff <= 0 || headerRecOff + 30 > nodeData.Length)
@@ -638,7 +638,7 @@ internal class HfsParser
                 goto parseLeaves;
             }
 
-            var headerRec = ReadBtHeaderRec(nodeData, headerRecOff);
+            BtHeaderRec headerRec = ReadBtHeaderRec(nodeData, headerRecOff);
             nodeSize = headerRec.NodeSize;
         }
 
@@ -646,19 +646,19 @@ internal class HfsParser
         if (nodeSize == 0 || nodeSize > nodeData.Length)
             return false;
 
-        var currentLeaf = BeU32(nodeData, headerRecOff + 10);
+        uint currentLeaf = BeU32(nodeData, headerRecOff + 10);
 
         var visited = new HashSet<uint>();
-        for (var safety = 0; safety < 100000 && currentLeaf != 0; safety++)
+        for (int safety = 0; safety < 100000 && currentLeaf != 0; safety++)
         {
             if (!visited.Add(currentLeaf))
                 break;
 
-            var leafOffset = (int)((ulong)currentLeaf * nodeSize);
+            int leafOffset = (int)((ulong)currentLeaf * nodeSize);
             if (leafOffset + nodeSize > nodeData.Length)
                 break;
 
-            var leafDesc = ReadBtNodeDescriptor(nodeData, leafOffset);
+            BtNodeDescriptor leafDesc = ReadBtNodeDescriptor(nodeData, leafOffset);
 
             if (leafDesc.Kind == KBtLeafNode)
             {
@@ -676,33 +676,33 @@ internal class HfsParser
         if (numRecords == 0)
             return;
 
-        var recordOffsets = new ushort[numRecords];
-        for (var i = 0; i < numRecords; i++)
+        ushort[] recordOffsets = new ushort[numRecords];
+        for (int i = 0; i < numRecords; i++)
         {
-            var tableOffset = nodeSize - 2 * (i + 1);
+            int tableOffset = nodeSize - 2 * (i + 1);
             recordOffsets[i] = BeU16(nodeData, nodeOffset + tableOffset);
         }
 
-        foreach (var off in recordOffsets.OrderBy(static o => o))
+        foreach (ushort off in recordOffsets.OrderBy(static o => o))
         {
             if (off + 7 > nodeSize)
                 continue;
 
-            var keyLength = nodeData[nodeOffset + off];
+            byte keyLength = nodeData[nodeOffset + off];
             if (keyLength < 7)
                 continue;
 
-            var parentId = BeU32(nodeData, nodeOffset + off + 2);
-            var nameLength = nodeData[nodeOffset + off + 6];
+            uint parentId = BeU32(nodeData, nodeOffset + off + 2);
+            byte nameLength = nodeData[nodeOffset + off + 6];
 
             if (nameLength > 31 || off + 7 + nameLength + 2 > nodeSize)
                 continue;
 
-            var name = nameLength > 0
+            string name = nameLength > 0
                 ? Encoding.ASCII.GetString(nodeData, nodeOffset + off + 7, nameLength)
                 : "";
 
-            var dataOff = nodeOffset + off + 7 + nameLength;
+            int dataOff = nodeOffset + off + 7 + nameLength;
             if ((nameLength & 1) == 0)
             {
                 dataOff++;
@@ -711,7 +711,7 @@ internal class HfsParser
             if (dataOff + 2 > nodeOffset + nodeSize)
                 continue;
 
-            var recordType = BeU16(nodeData, dataOff);
+            ushort recordType = BeU16(nodeData, dataOff);
 
             switch (recordType)
             {
@@ -720,7 +720,7 @@ internal class HfsParser
                     if (dataOff + 70 > nodeOffset + nodeSize)
                         continue;
 
-                    var folder = ReadFolderRecord(nodeData, dataOff);
+                    HfsFolderRecord folder = ReadFolderRecord(nodeData, dataOff);
                     folder.ParentId = parentId;
                     folder.Name = name;
                     _entries.Add(new HfsCatalogEntry
@@ -738,7 +738,7 @@ internal class HfsParser
                     if (dataOff + 102 > nodeOffset + nodeSize)
                         continue;
 
-                    var file = ReadFileRecord(nodeData, dataOff);
+                    HfsFileRecord file = ReadFileRecord(nodeData, dataOff);
                     _entries.Add(new HfsCatalogEntry
                     {
                         Name = name,
@@ -751,7 +751,7 @@ internal class HfsParser
                 case KHfsFolderThreadRecord:
                 case KHfsFileThreadRecord:
                 {
-                    var threadParentId = BeU32(nodeData, dataOff + 8);
+                    uint threadParentId = BeU32(nodeData, dataOff + 8);
                     _entries.Add(new HfsCatalogEntry
                     {
                         Name = name,
@@ -786,15 +786,15 @@ internal class HfsParser
             ModifyDate = BeU32(data, offset + 48)
         };
 
-        for (var i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
-            var extOff = offset + 70 + i * 4;
+            int extOff = offset + 70 + i * 4;
             rec.DataExtents[i] = (BeU16(data, extOff), BeU16(data, extOff + 2));
         }
 
-        for (var i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
-            var extOff = offset + 82 + i * 4;
+            int extOff = offset + 82 + i * 4;
             rec.RsrcExtents[i] = (BeU16(data, extOff), BeU16(data, extOff + 2));
         }
 
@@ -809,10 +809,10 @@ internal class HfsParser
         rootNode.NodeType = FsNodeType.Directory;
 
         var seen = new HashSet<string>();
-        for (var i = _entries.Count - 1; i >= 0; i--)
+        for (int i = _entries.Count - 1; i >= 0; i--)
         {
-            var e = _entries[i];
-            var key = $"{e.RecordType}:{e.ParentId}:{e.Name}";
+            HfsCatalogEntry e = _entries[i];
+            string key = $"{e.RecordType}:{e.ParentId}:{e.Name}";
             if (!seen.Add(key))
                 _entries.RemoveAt(i);
         }
@@ -827,7 +827,7 @@ internal class HfsParser
             .OrderBy(static e => e.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        foreach (var entry in children)
+        foreach (HfsCatalogEntry entry in children)
         {
             switch (entry.RecordType)
             {
@@ -849,19 +849,19 @@ internal class HfsParser
                 }
                 case HfsRecordType.File when entry.File != null:
                 {
-                    var file = entry.File;
-                    var dataSize = file.DataLogicalSize;
-                    var rsrcSize = file.ResourceLogicalSize;
+                    HfsFileRecord file = entry.File;
+                    int dataSize = file.DataLogicalSize;
+                    int rsrcSize = file.ResourceLogicalSize;
 
                     if (dataSize > 0)
                     {
-                        var child = CreateFileNode(entry.Name, file.DataExtents, (ulong)dataSize,
+                        FsNode child = CreateFileNode(entry.Name, file.DataExtents, (ulong)dataSize,
                             file.ModifyDate, file.CreateDate);
                         dirNode.Children.Add(child);
                     }
                     else if (rsrcSize > 0)
                     {
-                        var child = CreateFileNode(entry.Name, file.RsrcExtents, (ulong)rsrcSize,
+                        FsNode child = CreateFileNode(entry.Name, file.RsrcExtents, (ulong)rsrcSize,
                             file.ModifyDate, file.CreateDate);
                         dirNode.Children.Add(child);
                     }
@@ -900,15 +900,15 @@ internal class HfsParser
             CreatedTime = MacTimeToDateTime(createDate)
         };
 
-        var remaining = (long)logicalSize;
+        long remaining = (long)logicalSize;
         foreach ((uint startBlock, uint blockCount) in extents)
         {
             if (startBlock == 0 || blockCount == 0)
                 continue;
 
-            var lba = BlockToAbsoluteLba(startBlock);
-            var extentByteSize = (ulong)blockCount * _allocationBlockSize;
-            var extentSize = Math.Min((ulong)remaining, extentByteSize);
+            uint lba = BlockToAbsoluteLba(startBlock);
+            ulong extentByteSize = (ulong)blockCount * _allocationBlockSize;
+            ulong extentSize = Math.Min((ulong)remaining, extentByteSize);
 
             child.Extents.Add(new FsExtent { Lba = lba, Size = extentSize });
             remaining -= (long)extentSize;
@@ -953,21 +953,21 @@ internal class HfsParser
         headerRecOff = 0;
         nodeSize = 0;
 
-        for (var scan = 0; scan < nodeData.Length - 32; scan += 2)
+        for (int scan = 0; scan < nodeData.Length - 32; scan += 2)
         {
-            var nsz = BeU16(nodeData, scan + 18);
+            ushort nsz = BeU16(nodeData, scan + 18);
             if (nsz is not (512 or 1024 or 2048 or 4096 or 8192))
                 continue;
 
-            var ttl = BeU32(nodeData, scan + 22);
+            uint ttl = BeU32(nodeData, scan + 22);
             if (ttl is <= 0 or >= 100000)
                 continue;
 
-            var treeDepth = BeU16(nodeData, scan);
+            ushort treeDepth = BeU16(nodeData, scan);
             if (treeDepth is 0 or > 16)
                 continue;
 
-            var firstLeaf = BeU32(nodeData, scan + 10);
+            uint firstLeaf = BeU32(nodeData, scan + 10);
             if (firstLeaf > ttl)
                 continue;
 
@@ -984,8 +984,8 @@ internal class HfsParser
         if (count > 1024)
             return null;
 
-        var result = new byte[count * 2048];
-        for (var i = 0; i < count; i++)
+        byte[] result = new byte[count * 2048];
+        for (int i = 0; i < count; i++)
         {
             if (!_reader.ReadSector(lba + (uint)i, result, i * 2048))
                 return null;
@@ -1000,7 +1000,7 @@ internal class HfsParser
             return null;
 
         const long macEpochOffset = 2082844800;
-        var unixTime = macTime - macEpochOffset;
+        long unixTime = macTime - macEpochOffset;
 
         if (unixTime < 0)
             return null;

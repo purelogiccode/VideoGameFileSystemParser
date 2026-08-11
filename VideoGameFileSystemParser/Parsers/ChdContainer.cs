@@ -29,11 +29,14 @@ public class ChdContainer : IDisposable, IAsyncDisposable
 
     private enum CueExportMode
     {
-        CueBin,
+        CueBin2352,
         CueBin2048,
-        CueIso,
-        CueBinWav,
-        CueIsoWav
+        CueIso2352,
+        CueIso2048,
+        CueBinWav2352,
+        CueBinWav2048,
+        CueIsoWav2352,
+        CueIsoWav2048
     }
 
     private bool _cueExportEnabled;
@@ -132,8 +135,10 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         if (!Open(consoleType))
             return false;
 
-        if (consoleType is ConsoleType.GenericCueBin2352Default or ConsoleType.GenericCueBin2048
-            or ConsoleType.GenericCueIso or ConsoleType.GenericCueBinWav or ConsoleType.GenericCueIsoWav)
+        if (consoleType is ConsoleType.GenericCueBin2352 or ConsoleType.GenericCueBin2048
+            or ConsoleType.GenericCueIso2352 or ConsoleType.GenericCueIso2048
+            or ConsoleType.GenericCueBinWav2352 or ConsoleType.GenericCueBinWav2048
+            or ConsoleType.GenericCueIsoWav2352 or ConsoleType.GenericCueIsoWav2048)
         {
             var rootNode = new FsNode { Name = "/", IsDirectory = true };
             BuildFromFsNode(rootNode);
@@ -141,11 +146,14 @@ public class ChdContainer : IDisposable, IAsyncDisposable
             // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
             var mode = consoleType switch
             {
-                ConsoleType.GenericCueBin2352Default => CueExportMode.CueBin,
+                ConsoleType.GenericCueBin2352 => CueExportMode.CueBin2352,
                 ConsoleType.GenericCueBin2048 => CueExportMode.CueBin2048,
-                ConsoleType.GenericCueIso => CueExportMode.CueIso,
-                ConsoleType.GenericCueBinWav => CueExportMode.CueBinWav,
-                ConsoleType.GenericCueIsoWav => CueExportMode.CueIsoWav,
+                ConsoleType.GenericCueIso2352 => CueExportMode.CueIso2352,
+                ConsoleType.GenericCueIso2048 => CueExportMode.CueIso2048,
+                ConsoleType.GenericCueBinWav2352 => CueExportMode.CueBinWav2352,
+                ConsoleType.GenericCueBinWav2048 => CueExportMode.CueBinWav2048,
+                ConsoleType.GenericCueIsoWav2352 => CueExportMode.CueIsoWav2352,
+                ConsoleType.GenericCueIsoWav2048 => CueExportMode.CueIsoWav2048,
                 _ => throw new InvalidOperationException(
                     $"Unexpected console type: {consoleType}")
             };
@@ -165,7 +173,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         BuildFromFsNode(parsedRoot);
 
         if (consoleType is ConsoleType.PcEngineCd or ConsoleType.PcFx)
-            BuildVirtualCueExport(CueExportMode.CueBin);
+            BuildVirtualCueExport(CueExportMode.CueBin2352);
 
         return true;
     }
@@ -373,11 +381,11 @@ public class ChdContainer : IDisposable, IAsyncDisposable
 
             if (string.Equals(entry.Name, _cueStemName + ".bin", StringComparison.OrdinalIgnoreCase))
                 return ReadVirtualBin(offset, buffer, bufOffset, bytesToRead,
-                    _cueMode == CueExportMode.CueBinWav);
+                    _cueMode is CueExportMode.CueBinWav2352 or CueExportMode.CueBinWav2048);
 
             if (string.Equals(entry.Name, _cueStemName + ".iso", StringComparison.OrdinalIgnoreCase))
                 return ReadVirtualBin(offset, buffer, bufOffset, bytesToRead,
-                    _cueMode == CueExportMode.CueIsoWav);
+                    _cueMode is CueExportMode.CueIsoWav2352 or CueExportMode.CueIsoWav2048);
 
             if (TryParseWavTrackIndex(entry.Name, out var wavTrackIdx))
                 return ReadVirtualWav(wavTrackIdx, offset, buffer, bufOffset, bytesToRead);
@@ -482,14 +490,18 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         _cueMode = mode;
         _cueStemName = Path.GetFileNameWithoutExtension(_chdPath);
 
-        var isIsoMode = mode is CueExportMode.CueIso or CueExportMode.CueIsoWav;
-        var isWavMode = mode is CueExportMode.CueBinWav or CueExportMode.CueIsoWav;
+        var isIsoMode = mode is CueExportMode.CueIso2352 or CueExportMode.CueIso2048
+            or CueExportMode.CueIsoWav2352 or CueExportMode.CueIsoWav2048;
+        var isWavMode = mode is CueExportMode.CueBinWav2352 or CueExportMode.CueBinWav2048
+            or CueExportMode.CueIsoWav2352 or CueExportMode.CueIsoWav2048;
 
+        // Data-track sector size: 2048 for the cooked variants, otherwise the
+        // raw unit size (capped at 2352). Audio tracks inside BINARY files
+        // always use 2352-byte sectors (see VirtualTrackSectorSize).
         _cueSectorSize = mode switch
         {
-            CueExportMode.CueBin2048 => 2048u,
-            CueExportMode.CueIso => 2048u,
-            CueExportMode.CueIsoWav => 2048u,
+            CueExportMode.CueBin2048 or CueExportMode.CueIso2048
+                or CueExportMode.CueBinWav2048 or CueExportMode.CueIsoWav2048 => 2048u,
             _ => Math.Min(UnitBytes, 2352u)
         };
 
@@ -532,11 +544,9 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                     currentFile = dataFileName;
                 }
 
-                var modeStr = isIsoMode
-                    ? (t.TrackType.Contains("MODE2") || t.TrackType.Contains("CDI") ? "MODE2/2048" : "MODE1/2048")
-                    : t.TrackType.Contains("MODE2") || t.TrackType.Contains("CDI")
-                        ? $"MODE2/{_cueSectorSize}"
-                        : $"MODE1/{_cueSectorSize}";
+                var modeStr = t.TrackType.Contains("MODE2") || t.TrackType.Contains("CDI")
+                    ? $"MODE2/{_cueSectorSize}"
+                    : $"MODE1/{_cueSectorSize}";
 
                 sb.AppendLine(CultureInfo.InvariantCulture, $"  TRACK {trackNum:D2} {modeStr}");
 

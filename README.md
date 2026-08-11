@@ -3,15 +3,33 @@
 A **cross-platform .NET library** for parsing video game console disc image file systems. Supports CHD, ISO, and raw sector data across 31 console formats including PlayStation, Xbox, Dreamcast, CD-i, 3DO, Pippin (HFS), and more.
 
 [![NuGet](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-blue)](https://dotnet.microsoft.com/)
-[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.1.0)
+[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.2.0)
 [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/drpetersonfernandes/VideoGameFileSystemParser/blob/master/LICENSE.txt)
 
 
 
 ---
 
+## Documentation
+
+A complete multi-page wiki-style documentation set lives in [`docs/`](docs/):
+
+- [Home](docs/Home.md) — overview and feature highlights
+- [Getting Started](docs/Getting-Started.md) — installation and first project
+- [Usage Guide](docs/Usage-Guide.md) — opening, mounting, reading, and error handling
+- [Supported Consoles](docs/Supported-Consoles.md) — console reference and parser logic
+- [Virtual CUE/BIN/ISO/WAV Exports](docs/Virtual-Exports.md) — export modes and sector-size rules
+- [API Reference](docs/API-Reference.md) — complete public API
+- [Architecture](docs/Architecture.md) — internal design
+- [Migration Guide](docs/Migration-Guide.md) — breaking changes between versions
+- [FAQ](docs/FAQ.md) — frequently asked questions
+- [Contributing](docs/Contributing.md) — build and contribution guidelines
+
+---
+
 ## Release Notes
 
+- **v1.2.0** — Sector-size-aware generic formats (`GenericIsoRaw2352`/`GenericIsoRaw2048`, `GenericCueIso2352`/`GenericCueIso2048`, `GenericCueBinWav2352`/`GenericCueBinWav2048`, `GenericCueIsoWav2352`/`GenericCueIsoWav2048`), new `ConsoleTypeRegistry` (display names + CLI aliases), virtual CUE export fixes for 2048-cooked variants, code modernization, and the multi-page wiki docs. **Breaking:** removed `GenericIsoRaw`, `GenericCueIso`, `GenericCueBinWav`, `GenericCueIsoWav`, `GenericCueBin2352Default`. See [WhatsNew.md](WhatsNew.md).
 - **v1.1.0** — Fixed virtual CUE/BIN/ISO/WAV export: pregap shift, missing ISO audio, and truncated tracks.
 - **v1.0.0** — Initial release with support for 31 console formats.
 
@@ -20,6 +38,7 @@ A **cross-platform .NET library** for parsing video game console disc image file
 ## Table of Contents
 
 - [Installation](#installation)
+- [Documentation](#documentation)
 - [Quick Start](#quick-start)
 - [Examples](#examples)
   - [Open a CHD and List Files](#example-1-open-a-chd-and-list-files)
@@ -44,10 +63,12 @@ A **cross-platform .NET library** for parsing video game console disc image file
   - [FsExtent](#fsextent)
   - [FsNodeType](#fsnodetype)
   - [ConsoleType](#consoletype)
+  - [ConsoleTypeRegistry](#consoletyperegistry)
   - [ConsoleInfo](#consoleinfo)
   - [TrackInfo](#trackinfo)
   - [SectorReader](#sectorreader)
 - [Architecture](#architecture)
+- [Related Projects](#related-projects)
 - [Dependencies](#dependencies)
 - [License](#license)
 
@@ -70,7 +91,7 @@ Install-Package VideoGameFileSystemParser
 Or add directly to your `.csproj`:
 
 ```xml
-<PackageReference Include="VideoGameFileSystemParser" Version="1.1.0" />
+<PackageReference Include="VideoGameFileSystemParser" Version="1.2.0" />
 ```
 
 **Target Frameworks:** `net8.0`, `net9.0`, `net10.0`
@@ -211,7 +232,7 @@ using VideoGameFileSystemParser.Parsers;
 using var container = new ChdContainer("game.chd");
 
 // Mount as CUE/BIN with 2352-byte sectors
-if (container.MountAndParse(ConsoleType.GenericCueBin2352Default))
+if (container.MountAndParse(ConsoleType.GenericCueBin2352))
 {
     Console.WriteLine("Virtual CUE/BIN files:");
     foreach (var entry in container.Entries)
@@ -230,10 +251,13 @@ if (container.MountAndParse(ConsoleType.GenericCueBin2352Default))
 }
 
 // Other export modes:
-// ConsoleType.GenericCueBin2048   - CUE/BIN with 2048-byte cooked sectors
-// ConsoleType.GenericCueIso       - CUE/ISO with 2048-byte sectors
-// ConsoleType.GenericCueBinWav    - CUE/BIN with separate WAV audio tracks
-// ConsoleType.GenericCueIsoWav    - CUE/ISO with separate WAV audio tracks
+// ConsoleType.GenericCueBin2048    - CUE/BIN with 2048-byte cooked sectors
+// ConsoleType.GenericCueIso2352    - CUE/ISO with 2352-byte sectors
+// ConsoleType.GenericCueIso2048    - CUE/ISO with 2048-byte sectors
+// ConsoleType.GenericCueBinWav2352 - CUE/BIN with separate WAV audio tracks (2352-byte data)
+// ConsoleType.GenericCueBinWav2048 - CUE/BIN with separate WAV audio tracks (2048-byte data)
+// ConsoleType.GenericCueIsoWav2352 - CUE/ISO with separate WAV audio tracks (2352-byte data)
+// ConsoleType.GenericCueIsoWav2048 - CUE/ISO with separate WAV audio tracks (2048-byte data)
 ```
 
 ### Example 5: Browse All Supported Consoles
@@ -298,7 +322,7 @@ using VideoGameFileSystemParser.Models;
 using VideoGameFileSystemParser.Parsers;
 
 using var container = new ChdContainer("game.chd");
-container.MountAndParse(ConsoleType.GenericIsoRaw);
+container.MountAndParse(ConsoleType.GenericIsoRaw2352);
 
 // In raw mode, the entire disc image is exposed as a single file
 foreach (var entry in container.Entries)
@@ -349,7 +373,8 @@ foreach (var entry in container.ListDirectory("\\"))
 | Dreamcast | `Dreamcast` | ISO 9660 + IP.BIN | `Iso9660Parser` | -- | Yes | Prefers track with `SEGA SEGAKATANA` boot signature |
 | FM Towns | `FmTowns` | ISO 9660 | `Iso9660Parser` | -- | Yes | Standard ISO 9660 |
 | Generic ISO 9660 | `GenericIso9660` | ISO 9660 | `Iso9660Parser` | -- | Yes | Standard ISO 9660 / High Sierra |
-| Generic ISO Raw | `GenericIsoRaw` | Raw sectors | `GenericIsoRawParser` | -- | No | Exposes entire image as `image.iso` |
+| Generic ISO Raw (2352) | `GenericIsoRaw2352` | Raw sectors | `GenericIsoRawParser` | -- | No | Exposes entire image as `image.iso` with 2352-byte units |
+| Generic ISO Raw (2048) | `GenericIsoRaw2048` | Raw sectors | `GenericIsoRawParser` | -- | No | Exposes entire image as `image.iso` with 2048-byte units |
 | NeoGeo CD | `NeoGeoCd` | ISO 9660 | `Iso9660Parser` | -- | Yes | Standard ISO 9660 |
 | Nuon | `Nuon` | UDF / ISO 9660 | `UdfParser` | ISO 9660 | Yes | VM Labs Nuon DVD; tries UDF first |
 | PC Engine CD | `PcEngineCd` | **Non-standard** | `PcEngineCdParser` | ISO 9660, raw track | **Partial** | See [PC Engine CD observations](#pc-engine-cd-turbografx-cd) |
@@ -366,11 +391,14 @@ foreach (var entry in container.ListDirectory("\\"))
 | Sharp X68000 | `X68000` | ISO 9660 / UDF | `Iso9660Parser` | UDF | Yes | Tries ISO 9660 first, falls back to UDF |
 | Xbox | `Xbox` | XDVDFS | `XdvdfsParser` | -- | Yes | Xbox DVD File System |
 | Xbox 360 | `Xbox360` | XDVDFS | `XdvdfsParser` | -- | Yes | Xbox 360 DVD File System |
-| CUE/BIN (2352) | `GenericCueBin2352Default` | Virtual export | -- | -- | Virtual | Virtual CUE sheet + BIN with 2352-byte raw sectors |
+| CUE/BIN (2352) | `GenericCueBin2352` | Virtual export | -- | -- | Virtual | Virtual CUE sheet + BIN with 2352-byte raw sectors |
 | CUE/BIN (2048) | `GenericCueBin2048` | Virtual export | -- | -- | Virtual | Virtual CUE sheet + BIN with 2048-byte cooked sectors |
-| CUE/ISO | `GenericCueIso` | Virtual export | -- | -- | Virtual | Virtual CUE sheet + ISO with 2048-byte sectors |
-| CUE/BIN/WAV | `GenericCueBinWav` | Virtual export | -- | -- | Virtual | Virtual CUE + BIN data + separate WAV audio tracks |
-| CUE/ISO/WAV | `GenericCueIsoWav` | Virtual export | -- | -- | Virtual | Virtual CUE + ISO data + separate WAV audio tracks |
+| CUE/ISO (2352) | `GenericCueIso2352` | Virtual export | -- | -- | Virtual | Virtual CUE sheet + ISO with 2352-byte sectors |
+| CUE/ISO (2048) | `GenericCueIso2048` | Virtual export | -- | -- | Virtual | Virtual CUE sheet + ISO with 2048-byte sectors |
+| CUE/BIN/WAV (2352) | `GenericCueBinWav2352` | Virtual export | -- | -- | Virtual | Virtual CUE + BIN data (2352) + separate WAV audio tracks |
+| CUE/BIN/WAV (2048) | `GenericCueBinWav2048` | Virtual export | -- | -- | Virtual | Virtual CUE + BIN data (2048) + separate WAV audio tracks |
+| CUE/ISO/WAV (2352) | `GenericCueIsoWav2352` | Virtual export | -- | -- | Virtual | Virtual CUE + ISO data (2352) + separate WAV audio tracks |
+| CUE/ISO/WAV (2048) | `GenericCueIsoWav2048` | Virtual export | -- | -- | Virtual | Virtual CUE + ISO data (2048) + separate WAV audio tracks |
 
 ---
 
@@ -811,13 +839,17 @@ Identifies the target console or disc image format.
 | `CDi` | Philips CD-i format. |
 | `Dreamcast` | Sega Dreamcast GD-ROM format. |
 | `FmTowns` | Fujitsu FM Towns format. |
-| `GenericCueBin2352Default` | CUE/BIN with 2352-byte sectors. |
-| `GenericCueBin2048` | CUE/BIN with 2048-byte sectors. |
-| `GenericCueBinWav` | CUE/BIN with WAV audio tracks. |
-| `GenericCueIso` | CUE/ISO image. |
-| `GenericCueIsoWav` | CUE/ISO with WAV audio tracks. |
 | `GenericIso9660` | Generic ISO 9660 file system. |
-| `GenericIsoRaw` | Raw sector passthrough. |
+| `GenericIsoRaw2352` | Raw sector passthrough with 2352-byte units. |
+| `GenericIsoRaw2048` | Raw sector passthrough with 2048-byte units. |
+| `GenericCueBin2352` | CUE/BIN with 2352-byte sectors. |
+| `GenericCueBin2048` | CUE/BIN with 2048-byte sectors. |
+| `GenericCueIso2352` | CUE/ISO image with 2352-byte sectors. |
+| `GenericCueIso2048` | CUE/ISO image with 2048-byte sectors. |
+| `GenericCueBinWav2352` | CUE/BIN with WAV audio tracks (2352-byte data). |
+| `GenericCueBinWav2048` | CUE/BIN with WAV audio tracks (2048-byte data). |
+| `GenericCueIsoWav2352` | CUE/ISO with WAV audio tracks (2352-byte data). |
+| `GenericCueIsoWav2048` | CUE/ISO with WAV audio tracks (2048-byte data). |
 | `Nuon` | VM Labs Nuon DVD format. |
 | `NeoGeoCd` | SNK NeoGeo CD format. |
 | `PcEngineCd` | NEC PC Engine CD format. |
@@ -836,6 +868,36 @@ Identifies the target console or disc image format.
 | `Xbox360` | Microsoft Xbox 360 format. |
 | `Pico` | Sega Pico format. |
 | `Pippin` | Apple Bandai Pippin format. |
+
+---
+
+### ConsoleTypeRegistry
+
+**Namespace:** `VideoGameFileSystemParser.Models`
+
+Single source of truth for console type display names and CLI aliases. Host applications should resolve console types exclusively through this registry; alias lookup is case-insensitive and always returns the canonical type.
+
+#### Members
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `All` | `IReadOnlyList<ConsoleTypeInfo>` | All supported console/format entries, ordered as displayed in the UI and help text. |
+| `Parse(string? alias)` | `ConsoleType` | Resolves a console type from a CLI alias (case-insensitive), e.g. `"ps2"` or `"cuebin2352"`. Returns `ConsoleType.Unknown` if not recognized. |
+| `GetDisplayName(ConsoleType type)` | `string` | Returns the primary display name for a console type (the first registered entry). |
+| `GetAliases(ConsoleType type)` | `IReadOnlyList<string>` | Returns all aliases registered for a console type. |
+
+```csharp
+// Resolve a console from its CLI alias
+ConsoleType type = ConsoleTypeRegistry.Parse("isoraw2352"); // ConsoleType.GenericIsoRaw2352
+
+// List every supported format with its display name
+foreach (var entry in ConsoleTypeRegistry.All)
+{
+    Console.WriteLine($"{entry.DisplayName}: {string.Join(", ", entry.Aliases)}");
+}
+```
+
+> **Note:** `GenericIsoRaw2352` is registered under several display names (e.g. "PS3 ISO RAW 2352", "Xbox ISO RAW 2352", "ISO RAW 2352") — alias lookup always returns the canonical type.
 
 ---
 
@@ -919,6 +981,18 @@ ChdContainer (high-level API)
     │       └── PlayStationParsers (CD-ROM XA)
     └── Virtual exports: CUE/BIN, CUE/ISO, CUE/BIN/WAV, CUE/ISO/WAV, SingleFile ISO
 ```
+
+---
+
+## Related Projects
+
+### CHDMounter
+
+[**CHDMounter**](https://github.com/drpetersonfernandes/CHDMounter) is the companion application that **battle-tests this library in production** — a Windows tool that mounts CHD disc images as virtual drives using the parsing engine in this repository.
+
+It is also where the library's **unit test suite** lives ([`CHDMounter.Core.Tests`](https://github.com/drpetersonfernandes/CHDMounter/tree/master/CHDMounter.Core.Tests)) — parser tests, per-console integration tests, `ConsoleTypeRegistry` tests, and more.
+
+> **Try the library in action:** build and run CHDMounter, mount a CHD, and browse the parsed file system as a real drive — no code required.
 
 ---
 
