@@ -1,6 +1,20 @@
 # What's New in VideoGameFileSystemParser
 
-This file tracks the highlights of each release. The latest version is **v1.2.0**.
+This file tracks the highlights of each release. The latest version is **v1.3.0**.
+
+---
+
+## v1.3.0 — CHDSharp 1.4.3 dependency update
+
+**Release date:** 2026
+
+### Changes
+
+- **Updated to CHDSharp 1.4.3.** The CHD reader dependency was bumped from 1.2.0 to 1.4.3, picking up the latest CHD decoder fixes, performance work and `CancellationToken`-aware I/O APIs. No public API changes.
+
+### Compatibility
+
+- The package now requires **CHDSharp 1.4.3 or newer** at runtime. Applications that previously relied on the CHDSharp 1.2.0 binary contract must update their own CHDSharp reference to 1.4.3.
 
 ---
 

@@ -24,7 +24,7 @@ Install-Package VideoGameFileSystemParser
 ### Direct .csproj reference
 
 ```xml
-<PackageReference Include="VideoGameFileSystemParser" Version="1.2.0" />
+<PackageReference Include="VideoGameFileSystemParser" Version="1.3.0" />
 ```
 
 > **Note:** if you migrate from an older version, review the [Migration Guide](Migration-Guide.md) — v1.2.0 renamed several `ConsoleType` values.
@@ -39,7 +39,7 @@ The package contains:
 - XML documentation files for IntelliSense
 - `README.md`, `WhatsNew.md`, `LICENSE.txt`, package icon
 
-The only runtime dependency is **CHDSharp 1.2.0** (MAME CHD format reader), resolved automatically by NuGet.
+The only runtime dependency is **CHDSharp 1.4.3** (MAME CHD format reader), resolved automatically by NuGet.
 
 ## First project
 

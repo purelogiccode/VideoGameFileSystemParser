@@ -7,11 +7,11 @@
 | | |
 |---|---|
 | **NuGet** | `VideoGameFileSystemParser` — [nuget.org/packages/VideoGameFileSystemParser](https://www.nuget.org/packages/VideoGameFileSystemParser) |
-| **Version** | 1.2.0 |
+| **Version** | 1.3.0 |
 | **Targets** | .NET 8.0 · .NET 9.0 · .NET 10.0 |
 | **License** | MIT |
 | **Source** | [github.com/drpetersonfernandes/VideoGameFileSystemParser](https://github.com/drpetersonfernandes/VideoGameFileSystemParser) |
-| **Dependency** | [CHDSharp](https://www.nuget.org/packages/CHDSharp) 1.2.0 |
+| **Dependency** | [CHDSharp](https://www.nuget.org/packages/CHDSharp) 1.4.3 |
 
 ---
 
@@ -56,6 +56,7 @@ This library is **battle-tested in production** by [**CHDMounter**](https://gith
 
 ## Release history
 
+- **v1.3.0** — CHDSharp 1.4.3 dependency update (latest decoder fixes, performance work and cancellation-aware I/O; no public API changes).
 - **v1.2.0** — Sector-size-aware generic formats; `ConsoleTypeRegistry`; CUE export fixes; code modernization; professional multi-page documentation. **Breaking.**
 - **v1.1.0** — Virtual CUE/BIN/ISO/WAV export fixes (pregap shift, missing ISO audio, truncated tracks).
 - **v1.0.0** — Initial release, 31 console formats.

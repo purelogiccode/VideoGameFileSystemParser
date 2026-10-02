@@ -1,6 +1,6 @@
 # API Reference
 
-Complete public API surface of **VideoGameFileSystemParser 1.2.0**. All signatures below are copied from the compiled source.
+Complete public API surface of **VideoGameFileSystemParser 1.3.0**. All signatures below are copied from the compiled source.
 
 **Namespaces:**
 

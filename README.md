@@ -3,7 +3,7 @@
 A **cross-platform .NET library** for parsing video game console disc image file systems. Supports CHD, ISO, and raw sector data across 35 console and disc formats including PlayStation, Xbox, Dreamcast, CD-i, 3DO, Pippin (HFS), and more.
 
 [![NuGet](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-blue)](https://dotnet.microsoft.com/)
-[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.2.0)
+[![NuGet](https://img.shields.io/badge/NuGet-VideoGameFileSystemParser-blue)](https://www.nuget.org/packages/VideoGameFileSystemParser/1.3.0)
 [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/drpetersonfernandes/VideoGameFileSystemParser/blob/master/LICENSE.txt)
 
 
@@ -29,6 +29,7 @@ A complete multi-page wiki-style documentation set lives in [`docs/`](docs/):
 
 ## Release Notes
 
+- **v1.3.0** — Updated CHDSharp dependency to 1.4.3 (latest CHD decoder fixes, performance work and cancellation-aware I/O). No public API changes.
 - **v1.2.0** — Sector-size-aware generic formats (`GenericIsoRaw2352`/`GenericIsoRaw2048`, `GenericCueIso2352`/`GenericCueIso2048`, `GenericCueBinWav2352`/`GenericCueBinWav2048`, `GenericCueIsoWav2352`/`GenericCueIsoWav2048`), new `ConsoleTypeRegistry` (display names + CLI aliases), virtual CUE export fixes for 2048-cooked variants, code modernization, and the multi-page wiki docs. **Breaking:** removed `GenericIsoRaw`, `GenericCueIso`, `GenericCueBinWav`, `GenericCueIsoWav`, `GenericCueBin2352Default`. See [WhatsNew.md](WhatsNew.md).
 - **v1.1.0** — Fixed virtual CUE/BIN/ISO/WAV export: pregap shift, missing ISO audio, and truncated tracks.
 - **v1.0.0** — Initial release with support for 31 console formats.
@@ -91,7 +92,7 @@ Install-Package VideoGameFileSystemParser
 Or add directly to your `.csproj`:
 
 ```xml
-<PackageReference Include="VideoGameFileSystemParser" Version="1.2.0" />
+<PackageReference Include="VideoGameFileSystemParser" Version="1.3.0" />
 ```
 
 **Target Frameworks:** `net8.0`, `net9.0`, `net10.0`
@@ -1000,7 +1001,7 @@ It is also where the library's **unit test suite** lives ([`CHDMounter.Core.Test
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| [CHDSharp](https://www.nuget.org/packages/CHDSharp) | 1.2.0 | MAME CHD format reader |
+| [CHDSharp](https://www.nuget.org/packages/CHDSharp) | 1.4.3 | MAME CHD format reader |
 | [Microsoft.SourceLink.GitHub](https://www.nuget.org/packages/Microsoft.SourceLink.GitHub) | 10.0.301 | Source link for NuGet debugging |
 
 ---
