@@ -220,7 +220,7 @@ public class PcEngineCdParser : IConsoleParser
             return false;
 
         var descriptor = Encoding.ASCII.GetString(sector, 0x20, Signature.Length);
-        if (descriptor == Signature)
+        if (string.Equals(descriptor, Signature, StringComparison.OrdinalIgnoreCase))
             return true;
 
         var gamesExpress = Encoding.ASCII.GetString(sector, 0, Math.Min(sector.Length, 128));

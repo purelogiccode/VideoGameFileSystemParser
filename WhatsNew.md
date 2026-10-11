@@ -1,6 +1,21 @@
 # What's New in VideoGameFileSystemParser
 
-This file tracks the highlights of each release. The latest version is **v1.3.0**.
+This file tracks the highlights of each release. The latest version is **v1.4.0**.
+
+---
+
+## v1.4.0 — Failure diagnostics and tolerant metadata matching
+
+**Release date:** 2026
+
+### New features
+
+- **`ChdContainer.LastError`** — gets the reason the most recent open or parse operation failed, or `null` on success. `Open` and `MountAndParse` now report what went wrong (CHDSharp open failure with the CHDSharp error message, track/metadata parsing exceptions, missing parser for a console type, and unrecognized file systems) instead of only returning `false`. When the image has no data tracks, the parse-failure message now hints that the file may not be a CD/disc image.
+
+### Fixes
+
+- **Invariant-culture WAV track index parsing** — the virtual CUE/WAV export parses track indices from file names with `CultureInfo.InvariantCulture`, so numbers are read consistently regardless of the host locale.
+- **Tolerant matching for well-known metadata tokens** — track types (`AUDIO`, `MODE2`, `MODE_2`, `CDI`, `PAD:`), the Sega IP.BIN signature and the PC Engine boot signature are now compared case-insensitively; disc file/volume names keep their exact, ordinal matching.
 
 ---
 

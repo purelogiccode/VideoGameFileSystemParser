@@ -85,7 +85,8 @@ public class DreamcastParser : IConsoleParser
 
         var sec = new byte[2048];
         var ok = _reader.ReadSector(track.StartLba, sec) &&
-                 Encoding.ASCII.GetString(sec, 0, IpBinSignature.Length) == IpBinSignature;
+                 string.Equals(Encoding.ASCII.GetString(sec, 0, IpBinSignature.Length), IpBinSignature,
+                     StringComparison.OrdinalIgnoreCase);
 
         _reader.Reset();
         return ok;

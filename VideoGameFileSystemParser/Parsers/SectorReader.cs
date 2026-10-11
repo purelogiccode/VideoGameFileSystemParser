@@ -440,7 +440,7 @@ public class SectorReader : IDisposable
         var hunkNum = chdFrame / sectorsPerHunk;
         var sectorInHunk = chdFrame % sectorsPerHunk;
 
-        var needsSwap = CurrentTrack?.TrackType == "AUDIO";
+        var needsSwap = string.Equals(CurrentTrack?.TrackType, "AUDIO", StringComparison.OrdinalIgnoreCase);
 
         if (hunkNum != _cachedHunkNum || _cachedHunkSwapped != needsSwap)
         {
@@ -722,8 +722,9 @@ public class SectorReader : IDisposable
     {
         if (track is null) return 16;
         if (!track.IsDataTrack) return 0;
-        if (track.TrackType.Contains("MODE2") || track.TrackType.Contains("MODE_2")) return 24;
-        if (track.TrackType.Contains("CDI")) return 24;
+        if (track.TrackType.Contains("MODE2", StringComparison.OrdinalIgnoreCase) ||
+            track.TrackType.Contains("MODE_2", StringComparison.OrdinalIgnoreCase)) return 24;
+        if (track.TrackType.Contains("CDI", StringComparison.OrdinalIgnoreCase)) return 24;
 
         return 16;
     }
@@ -774,7 +775,8 @@ public class SectorReader : IDisposable
                 Pregap = pregap,
                 Postgap = postgap,
                 TrackType = typeStr,
-                IsDataTrack = typeStr.Contains("MODE") || typeStr.Contains("CDI"),
+                IsDataTrack = typeStr.Contains("MODE", StringComparison.OrdinalIgnoreCase) ||
+                              typeStr.Contains("CDI", StringComparison.OrdinalIgnoreCase),
                 Metadata = metaText
             });
         }
@@ -804,7 +806,7 @@ public class SectorReader : IDisposable
         {
             foreach (var t in tracks)
             {
-                if (t.Metadata.Contains("PAD:"))
+                if (t.Metadata.Contains("PAD:", StringComparison.OrdinalIgnoreCase))
                 {
                     isGdrom = true;
                     break;

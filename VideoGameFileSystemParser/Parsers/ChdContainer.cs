@@ -50,6 +50,11 @@ public class ChdContainer : IDisposable, IAsyncDisposable
     private Dictionary<int, ulong>? _wavDataSizes;
 
     /// <summary>
+    /// Gets the reason the most recent open or parse operation failed, or <c>null</c> if it succeeded.
+    /// </summary>
+    public string? LastError { get; private set; }
+
+    /// <summary>
     /// Gets the read-only list of all file and directory entries in the container.
     /// </summary>
     public IReadOnlyList<FileEntry> Entries => _entries;
@@ -101,25 +106,38 @@ public class ChdContainer : IDisposable, IAsyncDisposable
     public bool Open(ConsoleType consoleType)
     {
         ConsoleType = consoleType;
+        LastError = null;
 
         var err = ChdFile.Open(_chdPath, out var chd);
         if (err != ChdError.Chderrnone || chd is null)
+        {
+            LastError = $"CHDSharp failed to open the file: {err} ({err.GetMessage()})";
             return false;
+        }
 
         _primaryChd = chd;
-
-        var unitBytes = chd.UnitBytes;
-        var reader = new SectorReader(chd, unitBytes);
-        UnitBytes = unitBytes;
-        HunkBytes = chd.HunkBytes;
-        VolumeSize = chd.TotalBytes;
-        VolumeName = Path.GetFileNameWithoutExtension(_chdPath);
-
-        _readerPool.Add(reader);
-        HasDataTracks = reader.Tracks.Any(static t => t.IsDataTrack);
-        lock (_poolLock)
+        try
         {
-            _availableReaders.Add(reader);
+            var unitBytes = chd.UnitBytes;
+            var reader = new SectorReader(chd, unitBytes);
+            UnitBytes = unitBytes;
+            HunkBytes = chd.HunkBytes;
+            VolumeSize = chd.TotalBytes;
+            VolumeName = Path.GetFileNameWithoutExtension(_chdPath);
+
+            _readerPool.Add(reader);
+            HasDataTracks = reader.Tracks.Any(static t => t.IsDataTrack);
+            lock (_poolLock)
+            {
+                _availableReaders.Add(reader);
+            }
+        }
+        catch (Exception ex)
+        {
+            _primaryChd.Dispose();
+            _primaryChd = null;
+            LastError = $"CHDSharp opened the file but track/metadata parsing failed: {ex.Message}";
+            return false;
         }
 
         return true;
@@ -132,6 +150,8 @@ public class ChdContainer : IDisposable, IAsyncDisposable
     /// <returns><c>true</c> if parsing succeeded; otherwise <c>false</c>.</returns>
     public bool MountAndParse(ConsoleType consoleType)
     {
+        LastError = null;
+
         if (!Open(consoleType))
             return false;
 
@@ -164,11 +184,21 @@ public class ChdContainer : IDisposable, IAsyncDisposable
 
         var parser = ParserFactory.CreateParser(consoleType, _readerPool[0]);
         if (parser is null)
+        {
+            LastError = $"No file system parser is available for console type '{consoleType}'.";
             return false;
+        }
 
         var parsedRoot = new FsNode();
         if (!parser.Parse(parsedRoot))
+        {
+            var noDataTracksHint = HasDataTracks
+                ? string.Empty
+                : " The CHD has no data tracks; it may not be a CD/disc image (it could be a hard-drive image).";
+            LastError =
+                $"The '{consoleType}' file system parser could not find a recognizable file system on this disc.{noDataTracksHint}";
             return false;
+        }
 
         BuildFromFsNode(parsedRoot);
 
@@ -536,7 +566,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                 var dataFileExt = isIsoMode ? "iso" : "bin";
                 var dataFileName = $"{_cueStemName}.{dataFileExt}";
 
-                if (currentFile != dataFileName)
+                if (!string.Equals(currentFile, dataFileName, StringComparison.OrdinalIgnoreCase))
                 {
                     if (!freshFile)
                         sb.AppendLine();
@@ -544,7 +574,8 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                     currentFile = dataFileName;
                 }
 
-                var modeStr = t.TrackType.Contains("MODE2") || t.TrackType.Contains("CDI")
+                var modeStr = t.TrackType.Contains("MODE2", StringComparison.OrdinalIgnoreCase) ||
+                              t.TrackType.Contains("CDI", StringComparison.OrdinalIgnoreCase)
                     ? $"MODE2/{_cueSectorSize}"
                     : $"MODE1/{_cueSectorSize}";
 
@@ -578,7 +609,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                 {
                     var wavFileName = $"{_cueStemName}_Track{trackNum:D2}.wav";
 
-                    if (currentFile != wavFileName)
+                    if (!string.Equals(currentFile, wavFileName, StringComparison.OrdinalIgnoreCase))
                     {
                         if (!freshFile)
                             sb.AppendLine();
@@ -597,7 +628,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
                 else
                 {
                     var containerFile = isIsoMode ? $"{_cueStemName}.iso" : $"{_cueStemName}.bin";
-                    if (currentFile != containerFile)
+                    if (!string.Equals(currentFile, containerFile, StringComparison.OrdinalIgnoreCase))
                     {
                         if (!freshFile)
                             sb.AppendLine();
@@ -696,7 +727,7 @@ public class ChdContainer : IDisposable, IAsyncDisposable
         if (!entryName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) return false;
 
         var numStr = entryName.Substring(prefix.Length, entryName.Length - prefix.Length - suffix.Length);
-        return int.TryParse(numStr, out trackIndex) && _wavHeaders.ContainsKey(trackIndex);
+        return int.TryParse(numStr, CultureInfo.InvariantCulture, out trackIndex) && _wavHeaders.ContainsKey(trackIndex);
     }
 
     private static byte[] BuildWavHeader(ulong pcmDataSize)
